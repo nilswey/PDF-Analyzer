@@ -1,23 +1,69 @@
-import fitz
-import pymupdf
-import sys
+# Import
 
-#pdf = sys.argv[1]
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout
 
-pdf = fitz.open('sample1.pdf')
+# Main Window Object, Settings
+app = QApplication([])
+main_window = QWidget()
+main_window.setWindowTitle("PDF Analyzer")
+main_window.resize(800, 600)
+
+# Create All Objects in Main Window
+
+# Object Top Centre
+title = QLabel("PDF Analyzer")
 
 
+# Objects Left Column
 
-# out = open("output.txt", "wb") # create a text output
-# for page in pdf: # iterate the document pages
-#     text = page.get_text().encode("utf8") # get plain text (is in UTF-8)
-#     out.write(text) # write text of page
-#     out.write(bytes((12,))) # write page delimiter (form feed 0x0C)
-#
-# out.close()
+# Objects right Column
 
-# open document, extract text into variable
-with pymupdf.open(pdf) as doc:  # open document
-    text = chr(12).join([page.get_text() for page in doc])
+# Design the objects
 
-print(text)
+#Master layout where everything goes into
+master_layout = QVBoxLayout()
+
+# Top Centrered Objects in horizontal
+title_box = QHBoxLayout()
+insert_box = QHBoxLayout()
+
+title_box.addWidget(title)
+
+# set up columns that contain objects later
+left_column = QVBoxLayout()
+right_column = QVBoxLayout()
+
+# rows in left column
+left_row1 = QHBoxLayout()
+left_row2 = QHBoxLayout()
+left_row3 = QHBoxLayout()
+
+# rows in right column
+right_row1 = QHBoxLayout()
+right_row2 = QHBoxLayout()
+
+# add to Layout
+master_layout.addLayout(title_box, Qt.AlignmentFlag.AlignHCenter)
+master_layout.addLayout(insert_box)
+
+left_column.addLayout(left_row1)
+left_column.addLayout(left_row2)
+left_column.addLayout(left_row3)
+
+right_column.addLayout(right_row1)
+right_column.addLayout(right_row2)
+
+master_layout.addLayout(left_column, 30)
+master_layout.addLayout(right_column, 70)
+
+
+main_window.setLayout(master_layout)
+
+# Events
+
+
+# Run the Application
+main_window.show()
+app.exec()
+
