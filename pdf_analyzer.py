@@ -70,3 +70,45 @@ def generate_wordcloud(text):
     plt.show()
 
 
+
+
+def analyze_pdf(pdf_file):
+    nlp = spacy.load("en_core_web_sm")
+
+    # open pdf with fitz
+    with fitz.open(pdf_file) as pdf:
+        full_text = ""
+
+        # update properties that can be extracted via fitz/pymupdf
+        pdf_page_no = pdf.page_count
+        pdf_title = pdf.metdata["title"]
+        pdf_author = pdf.metadata["author"]
+        pdf_keywords = pdf.metadata["keywords"]
+        pdf_author =  pdf.metadata["author"]
+
+
+        for page in pdf:
+            full_text += page.getText()
+
+        words = full_text.replace('\n', ' ').split()
+        self.word_count = len(words)
+
+        # cleaning references, appendices by removing everything after last occurence of split words
+        split_words = ["References", "Appendix", "Appendices", "Footnotes", "Glossary"]
+
+        for header in split_words:
+            if header in words:
+                text_list = words.split(word)[:-1]
+                text = " ".join(text_list)
+                text = text.replace('et al.', ' ')
+
+            else:
+                text = words.replace('et al.', ' ')
+
+
+        # start natural languague processing of pdf_text
+        text_nlp = nlp(text)
+
+        lemma = normalize_lemma(text_nlp)
+
+
