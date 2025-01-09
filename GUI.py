@@ -1,81 +1,149 @@
-import tkinter as tk
-from tkinter import filedialog, Label, Button, Text, Scrollbar, END, Toplevel
-from tkinter import messagebox
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from functions import analyze_pdf, generate_wordcloud
 
 
-class MainApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("PDF Analysis Tool")
-        self.root.geometry("500x300")
+class MainWindow(QWidget):
+    def __init__(self):
+        super().__init__()
 
-        # Instructions label
-        self.instructions = Label(self.root, text="Select a PDF file to analyze:", font=("Arial", 12))
-        self.instructions.pack(pady=10)
+        # Initialize fields needed for displaying results later
+        self.pdf_file_path = None
 
-        # File selection button
-        self.select_button = Button(self.root, text="Select File", command=self.select_file, font=("Arial", 10))
-        self.select_button.pack(pady=5)
+        # Properties for left column
+        self.pdf_title = QLabel("")
+        self.pdf_author = QLabel("")
+        self.pdf_keywords = QLabel("")
+        self.pdf_page_no = QLabel("")
+        self.sent_count = QLabel("")
+        self.word_count = QLabel("")
+        self.word_count_unique = QLabel("")
+        self.readability = QLabel("")
 
-        # File path label
-        self.file_path_label = Label(self.root, text="No file selected", font=("Arial", 10), wraplength=400)
-        self.file_path_label.pack(pady=5)
+        # Create objects for the right side
+        self.wordcloud = plt.figure()
+        self.wordcloud_canvas = FigureCanvas(self.wordcloud)
 
-        # Analyze button (disabled by default)
-        self.analyze_button = Button(self.root, text="Analyze File", command=self.analyze_file, font=("Arial", 10), state=tk.DISABLED)
-        self.analyze_button.pack(pady=20)
+        self.figure_right = plt.figure()
+        self.figure_right_canvas = FigureCanvas(self.figure_right)
+
+        # Configure the main window
+        self.setWindowTitle("PDF Analyzer")
+        self.resize(1200, 700)
+
+        # Initialize the user interface
+        self.init_ui()
+
+    def init_ui(self):
+        """Sets up the user interface."""
+        # Create all widgets
+        self.title = QLabel("PDF Analyzer")  # Top center title
+        self.select_text = QLabel("Select PDF File to Analyze:")
+        self.select_button = QPushButton("Select File")
+        self.file_path_label = QLabel("No file selected")  # Label to show the selected file path
+
+        # Master layout where everything goes into
+        self.master_layout = QVBoxLayout()
+
+        # Create top centered objects in horizontal layout
+        self.title_box = QHBoxLayout()
+
+        # Add widgets to title box
+        self.title_box.addWidget(self.title)
+        self.title_box.addStretch()  # Add stretch to the right
+        self.title_box.addWidget(self.select_text)
+        self.title_box.addWidget(self.select_button)
+        self.title_box.addWidget(self.file_path_label)
+
+        # Create column layouts
+        self.bot_row = QHBoxLayout()
+        self.left_column = QVBoxLayout()
+        self.right_column = QVBoxLayout()
+
+        # Add widgets to left column
+        self.left_column.addWidget(QLabel("PDF Title:"))
+        self.left_column.addWidget(self.pdf_title)
+        self.left_column.addWidget(QLabel("PDF Author:"))
+        self.left_column.addWidget(self.pdf_author)
+        self.left_column.addWidget(QLabel("PDF Keywords:"))
+        self.left_column.addWidget(self.pdf_keywords)
+        self.left_column.addWidget(QLabel("Number of Pages:"))
+        self.left_column.addWidget(self.pdf_page_no)
+        self.left_column.addWidget(QLabel("Sentence Count:"))
+        self.left_column.addWidget(self.sent_count)
+        self.left_column.addWidget(QLabel("Number of Words:"))
+        self.left_column.addWidget(self.word_count)
+        self.left_column.addWidget(QLabel("Number of Unique Words:"))
+        self.left_column.addWidget(self.word_count_unique)
+        self.left_column.addWidget(QLabel("Readability Score:"))
+        self.left_column.addWidget(self.readability)
+
+        # Add widgets to right column
+        self.right_column.addWidget(self.wordcloud_canvas)
+        self.right_column.addWidget(self.figure_right_canvas)
+
+        # Add layouts to master layout
+        self.bot_row.addLayout(self.left_column, 40)
+        self.bot_row.addLayout(self.right_column, 60)
+        self.master_layout.addLayout(self.title_box, 5)
+        self.master_layout.addLayout(self.bot_row, 95)
+
+        # Set the main layout for the window
+        self.setLayout(self.master_layout)
+
+        # Connect the button to the file selection method
+        self.select_button.clicked.connect(self.select_file)
 
     def select_file(self):
-        """Handle file selection."""
-        file_path = filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
+        """Handles the file selection process."""
+        # Open a file dialog to select a PDF file
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select PDF File", "", "PDF Files (*.pdf)")
+
+        # Check if a file was selected
         if file_path:
-            self.file_path_label.config(text=file_path)
-            self.analyze_button.config(state=tk.NORMAL)  # Enable the Analyze button
+            # Update the label with the selected file path
+            self.file_path_label.setText(file_path)
+            self.pdf_file_path = file_path
+
+            # Process the selected file
+            self.process_file(file_path)
         else:
-            self.file_path_label.config(text="No file selected")
-            self.analyze_button.config(state=tk.DISABLED)  # Disable the Analyze button
+            self.file_path_label.setText("No file selected")
 
-    def analyze_file(self):
-        """Analyze the selected file."""
-        file_path = self.file_path_label.cget("text")
-        if file_path == "No file selected":
-            messagebox.showerror("Error", "Please select a file first.")
-            return
+    def process_file(self, file_path):
+        """Processes the selected PDF file."""
+        try:
+            # Analyze the PDF
+            lemma_text, meta = analyze_pdf(file_path)
 
-        # Call your PDF analysis function here
-        # For now, we'll just display a message
-        analysis_result = f"Analysis for file: {file_path}\n\n[Add your analysis code here]"
-        self.show_results_window(analysis_result)
+            # Update the labels with metadata
+            self.pdf_title.setText(meta["title"])
+            self.pdf_author.setText(meta["author"])
+            self.pdf_keywords.setText(meta["keywords"])
+            self.pdf_page_no.setText(str(meta["page_no"]))
+            self.word_count.setText(str(meta["word_count"]))
+            self.sent_count.setText(str(meta["sentence_count"]))
+            self.word_count_unique.setText(str(meta["unique_count"]))
+            self.readability.setText(str(meta["read_dif"]))
 
-    def show_results_window(self, analysis_result):
-        """Display analysis results in a new window."""
-        results_window = Toplevel(self.root)
-        results_window.title("Analysis Results")
-        results_window.geometry("600x400")
+            # Generate the word cloud
+            wordcloud = generate_wordcloud(lemma_text)
+            self.wordcloud.clear()
+            ax = self.wordcloud.add_subplot(111)
+            ax.imshow(wordcloud, interpolation="bilinear")
+            ax.axis("off")
+            self.wordcloud_canvas.draw()
 
-        # Text widget for displaying results
-        results_text = Text(results_window, wrap="word")
-        results_text.insert(END, analysis_result)
-        results_text.config(state="disabled")  # Make the text read-only
-        results_text.pack(expand=True, fill="both", padx=10, pady=10)
+        except Exception as e:
+            print(f"Error processing file: {e}")
+            self.file_path_label.setText("Error processing file")
 
-        # Add a scrollbar
-        scrollbar = Scrollbar(results_text)
-        scrollbar.pack(side="right", fill="y")
-        results_text.config(yscrollcommand=scrollbar.set)
-        scrollbar.config(command=results_text.yview)
 
-    def on_close(self):
-        """Handle the closing event of the application."""
-        # Play the Windows XP shutdown sound in a separate thread
-        sound_path = "/music/windowsxp.mp3"  # Update with your sound file path
-        threading.Thread(target=playsound, args=(sound_path,), daemon=True).start()
-
-        # Close the app after the sound is played
-        self.root.after(2000, self.root.destroy)  # Adjust delay (in ms) based on the sound length
-
-# Main function to run the app
+# Run the application
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = MainApp(root)
-    root.mainloop()
+    app = QApplication([])
+    main_window = MainWindow()
+    main_window.show()
+    app.exec()

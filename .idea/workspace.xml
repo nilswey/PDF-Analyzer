@@ -5,8 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5be0ef29-22c8-4660-b268-cba0b0d3c4cd" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Main_window.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GUI.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Main_window.py" beforeDir="false" afterPath="$PROJECT_DIR$/Main_window.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pdf_analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/pdf_analyzer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pdf_try.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/pdf_try.ipynb" afterDir="false" />
     </list>
@@ -39,6 +40,7 @@
   "keyToString": {
     "Python.GUI.executor": "Run",
     "Python.Main_window.executor": "Run",
+    "Python.functions.executor": "Run",
     "Python.main.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
@@ -80,7 +82,8 @@
       <workItem from="1736181719226" duration="5669000" />
       <workItem from="1736241617982" duration="630000" />
       <workItem from="1736264155848" duration="6658000" />
-      <workItem from="1736320583220" duration="14936000" />
+      <workItem from="1736320583220" duration="14987000" />
+      <workItem from="1736438304755" duration="4231000" />
     </task>
     <servers />
   </component>
@@ -88,8 +91,9 @@
     <option name="version" value="3" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/PDF$GUI.coverage" NAME="GUI Coverage Results" MODIFIED="1736279205595" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/PDF$Main_window.coverage" NAME="Main_window Coverage Results" MODIFIED="1736341585419" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/PDF$functions.coverage" NAME="functions Coverage Results" MODIFIED="1736446015021" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/PDF$Main_window.coverage" NAME="Main_window Coverage Results" MODIFIED="1736445566593" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/PDF$GUI.coverage" NAME="GUI Coverage Results" MODIFIED="1736446167773" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/PDF$main.coverage" NAME="main Coverage Results" MODIFIED="1736280064542" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

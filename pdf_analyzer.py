@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from pymupdf import pymupdf
+from textacy import text_stats
 from wordcloud import WordCloud
 
 
@@ -84,14 +85,14 @@ def analyze_pdf(pdf_file):
         pdf_title = pdf.metdata["title"]
         pdf_author = pdf.metadata["author"]
         pdf_keywords = pdf.metadata["keywords"]
-        pdf_author =  pdf.metadata["author"]
+
 
 
         for page in pdf:
             full_text += page.getText()
 
         words = full_text.replace('\n', ' ').split()
-        self.word_count = len(words)
+        orig_word_count = len(words)
 
         # cleaning references, appendices by removing everything after last occurence of split words
         split_words = ["References", "Appendix", "Appendices", "Footnotes", "Glossary"]
@@ -109,6 +110,31 @@ def analyze_pdf(pdf_file):
         # start natural languague processing of pdf_text
         text_nlp = nlp(text)
 
-        lemma = normalize_lemma(text_nlp)
+        sentence_count = text_stats.basics.n_sents(text_nlp)
+        read_dif = text_stats.readability.flesch_reading_ease(text_nlp)
+
+        # lemmatize text, lowercase all words
+        normalized_text_list = []
+        for token in text_nlp:
+            if not token.is_stop and not token.is_punct and not token.is_space:
+                normalized_text_list.append(token.lemma_.lower())
+                lemma = ' '.join(normalized_text_list)
 
 
+        unique_count = text_stats.basics.n_unique_words(lemma)
+
+        # store metdata results in dictionary, to be returned at end
+        Meta = {
+            "title": pdf_title,
+            "author": pdf_author,
+            "keywords": pdf_keywords,
+            "page_no": pdf_page_no,
+            "word_count": orig_word_count,
+            "sentence_count": sentence_count,
+            "unique_count": unique_count,
+            "read_dif": read_dif
+
+
+        }
+
+    return lemma, fitz_meta

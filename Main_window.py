@@ -2,7 +2,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-
+from functions import *
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -62,7 +62,7 @@ class MainWindow(QWidget):
 
 
         # Placeholders for Analysis resutls
-
+        """
         self.pdf_title = QLabel("PDF Title Place")
         self.pdf_author = QLabel("PDF Author Place")
         self.pdf_keywords = QLabel("PDF Keywords Place")
@@ -75,11 +75,7 @@ class MainWindow(QWidget):
 
         # Create readability object
         self.readability = QLabel("Readability Score Place")
-
-        # create figures for right side
-        #self.wordcloud = QLabel("Wordcloud Placeholder")
-        #self.figure_right = QLabel("Figure Placeholder")
-
+        """
 
         # Master layout where everything goes into
         self.master_layout = QVBoxLayout()
@@ -186,6 +182,18 @@ class MainWindow(QWidget):
 
     def process_file(self, file_path):
 
+        lemma_text, meta = analyze_pdf(self.pdf_file_path)
+
+        self.pdf_title = meta["title"]
+        self.pdf_author = meta["author"]
+        self.pdf_keywords = meta["keywords"]
+        self.pdf_page_no = meta["page_no"]
+        self.word_count = meta["word_count"]
+        self.sent_count = meta["sentence_count"]
+        self.word_count_unique = meta["unique_count"]
+        self.readability = meta["read_dif"]
+
+        self.wordcloud = generate_wordcloud(lemma_text)
 
         print(f"Processing file: {file_path}")
         # Add your processing code here, such as analyzing the PDF file
