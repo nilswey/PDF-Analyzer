@@ -1,9 +1,12 @@
+from functools import partial
+
 import spacy
 import fitz  # PyMuPDF
 import textacy
+from textacy.preprocessing.normalize import bullet_points
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-from textacy import text_stats, extract
+from textacy import text_stats, extract, preprocessing
 
 nlp = spacy.load("en_core_web_sm")
 
@@ -46,16 +49,42 @@ def analyze_pdf(pdf_file):
 
         # Clean references, appendices, and other unwanted sections
         split_words = ["References", "Appendix", "Appendices", "Footnotes", "Glossary"]
-        for header in split_words:
-            if header in full_text:
-                full_text = full_text.split(header)[0]  # Keep text before the first occurrence
+        for word in split_words:
+            if word in full_text:
+                text_list = full_text.split(word)[:-1]
+                # test_split = text.split(word)[-1]
+                full_text = " ".join(text_list)  # Keep text before the first occurrence
                 break  # Stop after the first match
 
         # Replace "et al."
         full_text = full_text.replace("et al.", " ")
 
+        # Define Pipeline of things that should be removed or normalized
+        preproc = preprocessing.make_pipeline(
+            preprocessing.remove.brackets,
+            preprocessing.normalize.hyphenated_words,
+            preprocessing.normalize.unicode,
+            preprocessing.normalize.whitespace,
+            preprocessing.normalize.quotation_marks,
+            preprocessing.normalize.bullet_points,
+            preprocessing.remove.punctuation,
+            preprocessing.remove.brackets,
+            partial(preprocessing.replace.urls, repl="placeholder_"),
+            partial(preprocessing.replace.emails, repl="placeholder_"),
+            partial(preprocessing.replace.emojis, repl="placeholder_"),
+            partial(preprocessing.replace.hashtags, repl="placeholder_"),
+            partial(preprocessing.replace.numbers, repl="placeholder_"),
+            partial(preprocessing.replace.phone_numbers, repl="placeholder_"),
+            partial(preprocessing.replace.user_handles, repl="placeholder_")
+        )
+
+        prep_text = preproc(full_text)
+        # clean all the definded placeholder
+        prep_text= prep_text.replace("placeholder_", "")
+
+
         # Process the text with spaCy
-        text_nlp = nlp(full_text)
+        text_nlp = nlp(prep_text)
 
         # Extract text statistics using textacy
         sentence_count = text_stats.basics.n_sents(text_nlp)  # Number of sentences
@@ -97,14 +126,13 @@ def show_keyterms(text):
 
     return terms, values
 
-"""
+
 pdf = 'sample.pdf'
 
 lemmatized_text, Meta = analyze_pdf(pdf)
 
 #generate_wordcloud(lemmatized_text)
-extract_keyterms(lemmatized_text)
+show_keyterms(lemmatized_text)
 
 #print(lemmatized_text)
 #print(Meta)
-"""
