@@ -2,8 +2,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from functions import analyze_pdf, generate_wordcloud
-
+from functions import analyze_pdf, generate_wordcloud, show_keyterms
+from wordcloud import WordCloud
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -26,8 +26,8 @@ class MainWindow(QWidget):
         self.wordcloud = plt.figure()
         self.wordcloud_canvas = FigureCanvas(self.wordcloud)
 
-        self.figure_right = plt.figure()
-        self.figure_right_canvas = FigureCanvas(self.figure_right)
+        self.keyterms = plt.figure()
+        self.keyterms_canvas = FigureCanvas(self.keyterms)
 
         # Configure the main window
         self.setWindowTitle("PDF Analyzer")
@@ -79,10 +79,12 @@ class MainWindow(QWidget):
         self.left_column.addWidget(self.word_count_unique)
         self.left_column.addWidget(QLabel("Readability Score:"))
         self.left_column.addWidget(self.readability)
+        self.left_column.setColumnWidth(30)
 
         # Add widgets to right column
         self.right_column.addWidget(self.wordcloud_canvas)
-        self.right_column.addWidget(self.figure_right_canvas)
+        self.right_column.addWidget(self.keyterms_canvas)
+        self.left_column.setColumnWidth(70)
 
         # Add layouts to master layout
         self.bot_row.addLayout(self.left_column, 40)
@@ -129,12 +131,38 @@ class MainWindow(QWidget):
             self.readability.setText(str(meta["read_dif"]))
 
             # Generate the word cloud
-            wordcloud = generate_wordcloud(lemma_text)
+            wordcloud = WordCloud(background_color="White", colormap='RdYlGn', max_words=50).generate(lemma_text)
             self.wordcloud.clear()
             ax = self.wordcloud.add_subplot(111)
             ax.imshow(wordcloud, interpolation="bilinear")
             ax.axis("off")
             self.wordcloud_canvas.draw()
+
+            # generate keytermns
+            terms, values = show_keyterms(lemma_text)
+            self.keyterms.clear()  # Clear the existing plot
+            ax = self.keyterms.add_subplot(111)  # Add a subplot to the keyterms figure
+
+            # Create the bar chart
+            barplot = ax.barh(terms, values, color='skyblue')
+
+            # Annotate bars with keywords
+            for bar, term in zip(barplot, terms):
+                ax.text(
+                    bar.get_width() / 2,  # x-coordinate (center of the bar)
+                    bar.get_y() + bar.get_height() / 2,  # y-coordinate (center of the bar)
+                    term,  # Text to display
+                    ha='center', va='center', color='black', fontsize=10, wrap=True
+                )
+
+            # Add labels and title
+            ax.set_xlabel('Ranked Importance')
+            ax.axis("off")  # Hide y-ticks
+            ax.set_title('Key Terms')
+            ax.invert_yaxis()  # Invert y-axis to display highest score at the top
+
+            # Redraw the canvas
+            self.keyterms_canvas.draw()
 
         except Exception as e:
             print(f"Error processing file: {e}")

@@ -1,15 +1,16 @@
 import spacy
 import fitz  # PyMuPDF
-from textacy import text_stats
+import textacy
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
+from textacy import text_stats, extract
 
 nlp = spacy.load("en_core_web_sm")
 
 def generate_wordcloud(text):
-
-    wordcloud = WordCloud().generate(text)
+    wordcloud = WordCloud(background_color="White", colormap='RdYlGn', max_words=50).generate(text)
     plt.imshow(wordcloud)
+    plt.axis("off")
     plt.show()
 
 def analyze_pdf(pdf_file):
@@ -82,12 +83,28 @@ def analyze_pdf(pdf_file):
 
     return lemmatized_text, Meta
 
+
+def show_keyterms(text):
+
+    doc = textacy.make_spacy_doc(text, lang="en_core_web_sm")
+    # extract keyterms from text that are found in functionally connected words with length of 2,3 or 4, return only top 5 scoring
+    sgrank_list = extract.keyterms.sgrank(doc, ngrams=(2, 3, 4), topn=5)
+
+
+    # extract the items and values from sets in list
+    terms = [item[0] for item in sgrank_list]
+    values = [item[1] for item in sgrank_list]
+
+    return terms, values
+
 """
 pdf = 'sample.pdf'
 
 lemmatized_text, Meta = analyze_pdf(pdf)
 
-generate_wordcloud(lemmatized_text)
-print(lemmatized_text)
-print(Meta)
+#generate_wordcloud(lemmatized_text)
+extract_keyterms(lemmatized_text)
+
+#print(lemmatized_text)
+#print(Meta)
 """
