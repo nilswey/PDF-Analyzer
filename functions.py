@@ -1,5 +1,5 @@
 from functools import partial
-
+import re
 import spacy
 import fitz  # PyMuPDF
 import textacy
@@ -8,7 +8,7 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from textacy import text_stats, extract, preprocessing
 
-nlp = spacy.load("en_core_web_sm")
+#nlp = spacy.load("en_core_web_sm")
 
 def generate_wordcloud(text):
     wordcloud = WordCloud(background_color="White", colormap='RdYlGn', max_words=50).generate(text)
@@ -39,12 +39,34 @@ def analyze_pdf(pdf_file):
         pdf_author = pdf.metadata.get("author", "Unknown Author")
         pdf_keywords = pdf.metadata.get("keywords", "No Keywords")
 
+        page_headers = []
+
         # Extract text from all pages
         for page in pdf:
-            full_text += page.get_text()
+            page_text = page.get_text()
+
+            full_text += page_text
+
+            #extract potential and append to list
+            rows = page_text.split("\n")
+            # get first two rows in case there is a page number on the left side
+            first_rows = rows[:2]
+
+            page_headers.extend(first_rows)
+
+        # make headers a set to remove duplicates
+        # first page could be title page thats why it is left out
+        header_set = set(page_headers[2:])
+
+        # if the number of items in the header set is smaller there are duplicates
+        if len(header_set) < len(page_headers[2:]):
+            #if duplicates are found remove all the text found in the first rows because there is a pattern
+            for row in page_headers:
+                full_text = re.sub(re.escape(row),"", full_text)
+
 
         # Word count before cleaning
-        words = full_text.replace('\n', ' ').split()
+        words = full_text.replace('\n', "").split()
         orig_word_count = len(words)
 
         # Clean references, appendices, and other unwanted sections
@@ -56,8 +78,8 @@ def analyze_pdf(pdf_file):
                 full_text = " ".join(text_list)  # Keep text before the first occurrence
                 break  # Stop after the first match
 
-        # Replace "et al."
-        full_text = full_text.replace("et al.", " ")
+        # Replace "et al." found in scientific papers
+        full_text = full_text.replace("et al.", "")
 
         # Define Pipeline of things that should be removed or normalized
         preproc = preprocessing.make_pipeline(
@@ -67,7 +89,6 @@ def analyze_pdf(pdf_file):
             preprocessing.normalize.whitespace,
             preprocessing.normalize.quotation_marks,
             preprocessing.normalize.bullet_points,
-            preprocessing.remove.punctuation,
             preprocessing.remove.brackets,
             partial(preprocessing.replace.urls, repl="placeholder_"),
             partial(preprocessing.replace.emails, repl="placeholder_"),
@@ -126,13 +147,13 @@ def show_keyterms(text):
 
     return terms, values
 
+""""""
+#pdf = 'sample.pdf'
 
-pdf = 'sample.pdf'
-
-lemmatized_text, Meta = analyze_pdf(pdf)
+#lemmatized_text, Meta = analyze_pdf(pdf)
 
 #generate_wordcloud(lemmatized_text)
-show_keyterms(lemmatized_text)
+#show_keyterms(lemmatized_text)
 
 #print(lemmatized_text)
 #print(Meta)

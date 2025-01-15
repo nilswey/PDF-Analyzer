@@ -31,7 +31,7 @@ class MainWindow(QWidget):
 
         # Configure the main window
         self.setWindowTitle("PDF Analyzer")
-        self.resize(1200, 700)
+        self.resize(1400, 700)
 
         # Initialize the user interface
         self.init_ui()
@@ -79,12 +79,11 @@ class MainWindow(QWidget):
         self.left_column.addWidget(self.word_count_unique)
         self.left_column.addWidget(QLabel("Readability Score:"))
         self.left_column.addWidget(self.readability)
-        self.left_column.setColumnWidth(30)
 
         # Add widgets to right column
         self.right_column.addWidget(self.wordcloud_canvas)
         self.right_column.addWidget(self.keyterms_canvas)
-        self.left_column.setColumnWidth(70)
+
 
         # Add layouts to master layout
         self.bot_row.addLayout(self.left_column, 40)
