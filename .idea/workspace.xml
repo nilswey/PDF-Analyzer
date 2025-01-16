@@ -8,8 +8,8 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/GUI.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/functions.py" beforeDir="false" afterPath="$PROJECT_DIR$/functions.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/music/windowsxp.mp3" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/pdf_try.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/pdf_try.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sample1.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/sample1.pdf" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -89,7 +89,9 @@
       <workItem from="1736619664415" duration="3482000" />
       <workItem from="1736690018729" duration="1210000" />
       <workItem from="1736774183989" duration="382000" />
-      <workItem from="1736961803212" duration="8717000" />
+      <workItem from="1736961803212" duration="8760000" />
+      <workItem from="1737019660028" duration="392000" />
+      <workItem from="1737036061542" duration="18071000" />
     </task>
     <servers />
   </component>
@@ -97,9 +99,9 @@
     <option name="version" value="3" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/PDF$functions.coverage" NAME="functions Coverage Results" MODIFIED="1736971704017" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/PDF$functions.coverage" NAME="functions Coverage Results" MODIFIED="1737053617894" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/PDF$Main_window.coverage" NAME="Main_window Coverage Results" MODIFIED="1736445566593" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/PDF$GUI.coverage" NAME="GUI Coverage Results" MODIFIED="1736971733832" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/PDF$GUI.coverage" NAME="GUI Coverage Results" MODIFIED="1737055776440" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/PDF$main.coverage" NAME="main Coverage Results" MODIFIED="1736280064542" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

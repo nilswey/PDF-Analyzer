@@ -16,6 +16,36 @@ def generate_wordcloud(text):
     plt.axis("off")
     plt.show()
 
+def get_school_level(score):
+    #translate flesch reading score to school levels.
+    # based on https://pages.stern.nyu.edu/~wstarbuc/Writing/Flesch.htm
+
+    if 90 <= score <= 100:
+        return f"This text is very easy to read. It corresponds to 5th grade level."
+
+    elif 80 <= score < 90:
+        return f"This text is easy to read. It corresponds to 6th grade level."
+
+    elif 70 <= score < 80:
+        return f"This text is fairly easy to read. It corresponds to 7th grade level."
+
+    elif 60 <= score < 70:
+        return f"This texts reading difficulty is average. It corresponds to 8th and 9th grade level."
+
+    elif 50 <= score < 60:
+        return f"This text is fairly difficult to read. It corresponds to 10th to 12th grade level."
+
+    elif 30 <= score < 50:
+        return f"This text is difficult to read. It corresponds to college student level."
+
+    elif 0 <= score < 30:
+        return f"This text is very difficult to read. It corresponds to college graduate level."
+
+    else:
+        return "Invalid Score!"
+
+
+
 def analyze_pdf(pdf_file):
     """
     Analyzes a PDF file to extract text, metadata, and perform natural language processing using spaCy and textacy.
@@ -40,7 +70,7 @@ def analyze_pdf(pdf_file):
         pdf_keywords = pdf.metadata.get("keywords", "No Keywords")
 
         page_headers = []
-
+        page_ends = []
         # Extract text from all pages
         for page in pdf:
             page_text = page.get_text()
@@ -50,23 +80,31 @@ def analyze_pdf(pdf_file):
             #extract potential and append to list
             rows = page_text.split("\n")
             # get first two rows in case there is a page number on the left side
-            first_rows = rows[:2]
-
+            first_rows = rows[0:4]
+            last_rows = rows[-4:]
             page_headers.extend(first_rows)
+            page_ends.extend(last_rows)
 
         # make headers a set to remove duplicates
         # first page could be title page thats why it is left out
-        header_set = set(page_headers[2:])
+        header_set = set(page_headers[4:])
+        bottom_set = set(page_ends[4:])
 
         # if the number of items in the header set is smaller there are duplicates
-        if len(header_set) < len(page_headers[2:]):
+        if len(header_set) < len(page_headers[4:]):
             #if duplicates are found remove all the text found in the first rows because there is a pattern
-            for row in page_headers:
-                full_text = re.sub(re.escape(row),"", full_text)
+            dups_t = [row for row in page_headers if row in header_set]
+            for row in dups_t:
+                full_text = re.sub(re.escape(row)," ", full_text)
+
+        if len(bottom_set) < len(page_ends[4:]):
+            dups_b = [row for row in page_ends if row in bottom_set]
+            for row in dups_b:
+                full_text = re.sub(re.escape(row)," ", full_text)
 
 
         # Word count before cleaning
-        words = full_text.replace('\n', "").split()
+        words = full_text.replace('\n', " ").split()
         orig_word_count = len(words)
 
         # Clean references, appendices, and other unwanted sections
@@ -112,12 +150,19 @@ def analyze_pdf(pdf_file):
         read_dif = text_stats.readability.flesch_reading_ease(text_nlp)  # Flesch Reading Ease score
         unique_count = text_stats.basics.n_unique_words(text_nlp)  # Number of unique words
 
+
+        # assign meaning to Flesch reading score
+        reading_lvl = get_school_level(read_dif)
+
+
         # Lemmatize text and filter out stopwords, punctuation, and spaces
         normalized_text_list = [
             token.lemma_.lower() for token in text_nlp
             if not token.is_stop and not token.is_punct and not token.is_space
         ]
         lemmatized_text = " ".join(normalized_text_list)
+
+        unique_perc = str(round(unique_count/orig_word_count *100, 2)) + "%"
 
         # Store metadata results in a dictionary
         Meta = {
@@ -127,8 +172,8 @@ def analyze_pdf(pdf_file):
             "page_no": pdf_page_no,
             "word_count": orig_word_count,
             "sentence_count": sentence_count,
-            "unique_count": unique_count,
-            "read_dif": read_dif,
+            "unique_perc": unique_perc,
+            "read_dif": reading_lvl
         }
 
     return lemmatized_text, Meta
