@@ -1,158 +1,161 @@
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog
+from PyQt6.QtGui import QFont
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from functions import *
+from pdf_analyzer import analyze_pdf, show_keyterms
+from wordcloud import WordCloud
+
+# Custom Worker Thread for File Processing
+class FileProcessorThread(QThread):
+    result_ready = pyqtSignal(dict, str, str)  # Signal to emit results (metadata, lemma_text, error)
+    error_occurred = pyqtSignal(str)  # Signal for error messages
+
+    def __init__(self, file_path):
+        super().__init__()
+        self.file_path = file_path
+
+    def run(self):
+        try:
+            # Analyze the PDF
+            lemma_text, meta = analyze_pdf(self.file_path)
+            self.result_ready.emit(meta, lemma_text, None)  # Emit results
+        except Exception as e:
+            self.result_ready.emit({}, "", str(e))  # Emit an error signal
+
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        # initialize fields needed for displaying results later
+        # Initialize fields needed for displaying results later
         self.pdf_file_path = None
 
-        # properties for left column
-        self.pdf_title = None
-        self.pdf_author = None
-        self.pdf_keywords = None
-        self.pdf_page_no = None
-        self.sent_count = None
-        self.word_count = None
-        self.word_count_unique = None
-        self.readability = None
+        # Properties for left column
+        self.pdf_title = QLabel("")
+        self.pdf_author = QLabel("")
+        self.pdf_keywords = QLabel("")
+        self.pdf_page_no = QLabel("")
+        self.sent_count = QLabel("")
+        self.word_count = QLabel("")
+        self.word_count_unique = QLabel("")
+        self.readability = QLabel("")
 
-        # create objects for right side
+        # Create objects for the right side
         self.wordcloud = plt.figure()
         self.wordcloud_canvas = FigureCanvas(self.wordcloud)
 
-        self.figure_right = plt.figure()
-        self.figure_right_canvas = FigureCanvas(self.figure_right)
-
+        self.keyterms = plt.figure()
+        self.keyterms_canvas = FigureCanvas(self.keyterms)
 
         # Configure the main window
         self.setWindowTitle("PDF Analyzer")
-        self.resize(1200, 700)
+        self.setFixedSize(1400, 700)
 
         # Initialize the user interface
         self.init_ui()
 
     def init_ui(self):
-        """Sets up the user interface."""
-
-        # Create all widgets
+        # Set up User Interface
         self.title = QLabel("PDF Analyzer")  # Top center title
         self.select_text = QLabel("Select PDF File to Analyze:")
         self.select_button = QPushButton("Select File")
+        self.clear_button = QPushButton("Clear")
         self.file_path_label = QLabel("No file selected")  # Label to show the selected file path
 
+        # Style Top Row
+        font_title = QFont("Helvetica Neue", 18)
+        font_title.setBold(True)
+        self.title.setFont(font_title)
+        font_select = QFont("Helvetica Neue", 10)
 
-        # Create Labels for first Row - Left Col
-        self.pdf_title_label = QLabel("PDF Title:")
-        self.pdf_author_label = QLabel("PDF Author:")
-        self.pdf_keywords_label = QLabel("PDF Keywords:")
-
-        # Create Labels for second Row - Left Col
-        self.pdf_page_no_label = QLabel("Number of Pages:")
-        self.sent_count_label = QLabel("Sentence Count:")
-        self.word_count_label = QLabel("Number of Words:")
-        self.word_count_unique_label = QLabel("Number of Unique Words:")
-
-        # Create readability object
-        self.readability_label = QLabel("Readability Score:")
-
-
-        # Placeholders for Analysis resutls
-        """
-        self.pdf_title = QLabel("PDF Title Place")
-        self.pdf_author = QLabel("PDF Author Place")
-        self.pdf_keywords = QLabel("PDF Keywords Place")
-
-        # Create Labels for second Row - Left Col
-        self.pdf_page_no = QLabel("Number of Pages Place")
-        self.sent_count = QLabel("Sentence Count PLace")
-        self.word_count = QLabel("Number of Words Place")
-        self.word_count_unique = QLabel("Number of Unique Words Place")
-
-        # Create readability object
-        self.readability = QLabel("Readability Score Place")
-        """
+        self.select_text.setFont(font_select)
+        self.select_button.setFont(font_select)
+        self.clear_button.setFont(font_select)
 
         # Master layout where everything goes into
         self.master_layout = QVBoxLayout()
 
         # Create top centered objects in horizontal layout
         self.title_box = QHBoxLayout()
-
-        # Add widgets to title box
         self.title_box.addWidget(self.title)
         self.title_box.addStretch()  # Add stretch to the right
         self.title_box.addWidget(self.select_text)
         self.title_box.addWidget(self.select_button)
+        self.title_box.addWidget(self.clear_button)
         self.title_box.addWidget(self.file_path_label)
 
-
-        # Create column layouts
+        # Create column layouts under title box
         self.bot_row = QHBoxLayout()
         self.left_column = QVBoxLayout()
         self.right_column = QVBoxLayout()
 
-        # Rows in the left column
-        self.left_row1 = QHBoxLayout()
-        self.left_row2 = QHBoxLayout()
-        self.left_row3 = QHBoxLayout()
-        self.left_row4 = QHBoxLayout()
-        self.left_row5 = QHBoxLayout()
-        self.left_row6 = QHBoxLayout()
-        self.left_row7 = QHBoxLayout()
-        self.left_row8 = QHBoxLayout()
+        # Create labels in the left column
+        pdf_title_label = QLabel("PDF Title:")
+        pdf_author_label = QLabel("PDF Author:")
+        pdf_keywords_label = QLabel("PDF Keywords:")
+        pdf_page_no_label = QLabel("Number of Pages:")
+        sent_count_label = QLabel("Sentence Count:")
+        word_count_label = QLabel("Number of Words:")
+        word_count_unique_label = QLabel("Percentage of Unique Words:")
+        readability_label = QLabel("Readability:")
 
+        # Add and apply font style
+        font_left_label = QFont("Helvetica Neue", 10)
+        font_left_label.setBold(True)
 
-        # add widgets to left rows and col
-        self.left_row1.addWidget(self.pdf_title_label)
-        self.left_row2.addWidget(self.pdf_author_label)
-        self.left_row3.addWidget(self.pdf_keywords_label)
+        property_labels = [
+            pdf_title_label,
+            pdf_author_label,
+            pdf_keywords_label,
+            pdf_page_no_label,
+            sent_count_label,
+            word_count_label,
+            word_count_unique_label,
+            readability_label
+        ]
 
-        self.left_row4.addWidget(self.pdf_page_no_label)
-        self.left_row5.addWidget(self.sent_count_label)
-        self.left_row6.addWidget(self.word_count_label)
-        self.left_row7.addWidget(self.word_count_unique_label)
+        for label in property_labels:
+            label.setFont(font_left_label)
 
-        self.left_row8.addWidget(self.readability_label)
+        font_left_property = QFont("Helvetica Neue", 10)
+        property_widgets = [
+            self.pdf_title,
+            self.pdf_author,
+            self.pdf_keywords,
+            self.pdf_page_no,
+            self.sent_count,
+            self.word_count,
+            self.word_count_unique,
+            self.readability,
+        ]
 
+        for widget in property_widgets:
+            widget.setFont(font_left_property)
 
-        # Add Analasys Results
-        self.left_row1.addWidget(self.pdf_title)
-        self.left_row2.addWidget(self.pdf_author)
-        self.left_row3.addWidget(self.pdf_keywords)
+        # Add labels and widgets to the left column
+        self.left_column.addWidget(pdf_title_label)
+        self.left_column.addWidget(self.pdf_title)
+        self.left_column.addWidget(pdf_author_label)
+        self.left_column.addWidget(self.pdf_author)
+        self.left_column.addWidget(pdf_keywords_label)
+        self.left_column.addWidget(self.pdf_keywords)
+        self.left_column.addWidget(pdf_page_no_label)
+        self.left_column.addWidget(self.pdf_page_no)
+        self.left_column.addWidget(sent_count_label)
+        self.left_column.addWidget(self.sent_count)
+        self.left_column.addWidget(word_count_label)
+        self.left_column.addWidget(self.word_count)
+        self.left_column.addWidget(word_count_unique_label)
+        self.left_column.addWidget(self.word_count_unique)
+        self.left_column.addWidget(readability_label)
+        self.left_column.addWidget(self.readability)
 
-        self.left_row4.addWidget(self.pdf_page_no)
-        self.left_row5.addWidget(self.sent_count)
-        self.left_row6.addWidget(self.word_count)
-        self.left_row7.addWidget(self.word_count_unique)
-
-        self.left_row8.addWidget(self.readability)
-
-        # Rows in the right column
-        #self.right_row1 = QHBoxLayout()
-        #self.right_row2 = QHBoxLayout()
-
-
+        # Add widgets to right column
         self.right_column.addWidget(self.wordcloud_canvas)
-        self.right_column.addWidget(self.figure_right_canvas)
-
-        # Add rows to columns
-        self.left_column.addLayout(self.left_row1)
-        self.left_column.addLayout(self.left_row2)
-        self.left_column.addLayout(self.left_row3)
-        self.left_column.addLayout(self.left_row4)
-        self.left_column.addLayout(self.left_row5)
-        self.left_column.addLayout(self.left_row6)
-        self.left_column.addLayout(self.left_row7)
-        self.left_column.addLayout(self.left_row8)
-
+        self.right_column.addWidget(self.keyterms_canvas)
 
         # Add layouts to master layout
-
         self.bot_row.addLayout(self.left_column, 40)
         self.bot_row.addLayout(self.right_column, 60)
         self.master_layout.addLayout(self.title_box, 5)
@@ -161,42 +164,64 @@ class MainWindow(QWidget):
         # Set the main layout for the window
         self.setLayout(self.master_layout)
 
-        # Connect the button to the file selection method
+        # Connect the buttons to their methods
         self.select_button.clicked.connect(self.select_file)
+        self.clear_button.clicked.connect(self.clear_widgets)
 
     def select_file(self):
         """Handles the file selection process."""
-        # Open a file dialog to select a PDF file
         file_path, _ = QFileDialog.getOpenFileName(self, "Select PDF File", "", "PDF Files (*.pdf)")
 
-        # Check if a file was selected
         if file_path:
-            # Update the label with the selected file path
-            self.file_path_label.setText(file_path)
+            self.file_path_label.setText("Processing...")
             self.pdf_file_path = file_path
+            self.start_file_processing(file_path)
 
-            # You can add functionality to "do something" with the file here
-            self.process_file(file_path)
-        else:
-            self.file_path_label.setText("No file selected")
+    def start_file_processing(self, file_path):
+        """Starts the file processing in a separate thread."""
+        self.thread = FileProcessorThread(file_path)
+        self.thread.result_ready.connect(self.update_results)
+        self.thread.error_occurred.connect(self.show_error)
+        self.thread.start()
 
-    def process_file(self, file_path):
+    def update_results(self, meta, lemma_text, error):
+        """Updates the UI with the processed file results."""
+        if error:
+            self.file_path_label.setText(f"Error: {error}")
+            return
 
-        lemma_text, meta = analyze_pdf(self.pdf_file_path)
+        self.pdf_title.setText(meta.get("title", "N/A"))
+        self.pdf_author.setText(meta.get("author", "N/A"))
+        self.pdf_keywords.setText(meta.get("keywords", "N/A"))
+        self.pdf_page_no.setText(str(meta.get("page_no", "N/A")))
+        self.word_count.setText(str(meta.get("word_count", "N/A")))
+        self.sent_count.setText(str(meta.get("sentence_count", "N/A")))
+        self.word_count_unique.setText(str(meta.get("unique_perc", "N/A")))
+        self.readability.setText(str(meta.get("read_dif", "N/A")))
 
-        self.pdf_title = meta["title"]
-        self.pdf_author = meta["author"]
-        self.pdf_keywords = meta["keywords"]
-        self.pdf_page_no = meta["page_no"]
-        self.word_count = meta["word_count"]
-        self.sent_count = meta["sentence_count"]
-        self.word_count_unique = meta["unique_count"]
-        self.readability = meta["read_dif"]
+        # Generate Word Cloud
+        wordcloud = WordCloud(background_color="White", colormap='RdYlGn', max_words=50).generate(lemma_text)
+        self.wordcloud.clear()
+        ax = self.wordcloud.add_subplot(111)
+        ax.imshow(wordcloud, interpolation="bilinear")
+        ax.axis("off")
+        self.wordcloud_canvas.draw()
 
-        self.wordcloud = generate_wordcloud(lemma_text)
-
-        print(f"Processing file: {file_path}")
-        # Add your processing code here, such as analyzing the PDF file
+    def clear_widgets(self):
+        """Clears all widgets."""
+        self.pdf_title.clear()
+        self.pdf_author.clear()
+        self.pdf_keywords.clear()
+        self.pdf_page_no.clear()
+        self.sent_count.clear()
+        self.word_count.clear()
+        self.word_count_unique.clear()
+        self.readability.clear()
+        self.file_path_label.setText("No file selected")
+        self.wordcloud.clear()
+        self.wordcloud_canvas.draw()
+        self.keyterms.clear()
+        self.keyterms_canvas.draw()
 
 
 # Run the application

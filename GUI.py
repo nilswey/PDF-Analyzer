@@ -4,7 +4,7 @@ from PyQt6.QtGui import QFont
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from functions import analyze_pdf, generate_wordcloud, show_keyterms
+from pdf_analyzer import analyze_pdf, show_keyterms
 from wordcloud import WordCloud
 
 class MainWindow(QWidget):
@@ -33,7 +33,8 @@ class MainWindow(QWidget):
 
         # Configure the main window
         self.setWindowTitle("PDF Analyzer")
-        self.resize(1400, 700)
+        #self.resize(1400, 700)
+        self.setFixedSize(1400, 700)
 
         # Initialize the user interface
         self.init_ui()
@@ -196,7 +197,7 @@ class MainWindow(QWidget):
 
         for widget in property_widgets:
             widget.clear()
-
+        self.file_path_label.setText("No file selected")
         self.keyterms_canvas.draw()
         self.wordcloud_canvas.draw()
 
@@ -204,7 +205,7 @@ class MainWindow(QWidget):
         """Processes the selected PDF file."""
         try:
             # Analyze the PDF
-            lemma_text, meta = analyze_pdf(file_path)
+            lemma_text, meta, terms, values = analyze_pdf(file_path)
 
             # Update the labels with metadata
             self.pdf_title.setText(meta["title"])
@@ -226,7 +227,7 @@ class MainWindow(QWidget):
             self.wordcloud_canvas.draw()
 
             # generate keytermns
-            terms, values = show_keyterms(lemma_text)
+            # terms, values = show_keyterms(lemma_text)
             ax = self.keyterms.add_subplot(111)  # Add a subplot to the keyterms figure
 
             # Create the bar chart

@@ -1,129 +1,153 @@
-import matplotlib.pyplot as plt
-from pymupdf import pymupdf
-from textacy import text_stats
+from functools import partial
+import re
+import spacy
+import fitz  # PyMuPDF
+from textacy.preprocessing import remove, normalize, replace
+from textacy import text_stats, extract
 from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+
+nlp = spacy.load("en_core_web_sm")
 
 
-def get_pdf_meta(doc):  # has to be NLP
-    page_count = doc.page_count
-    metadata = doc.metadata
-    pdf_author = metadata["author"]
-    pdf_title = metadata["title"]
-    pdf_keywords = metadata["keywords"]
-    word_count = text_stats.basics.n_words(doc)
-    sentence_count = text_stats.basics.n_sents(doc)
-    unique_count = text_stats.basics.n_unique_words(doc)
-
-    read_dif = text_stats.readability.flesch_reading_ease(doc)
-    # Calculate the percentage of unique words
-    unique_per = round((unique_count / word_count) * 100, 2)
-
-    # Create a dictionary with variable names as keys and their corresponding values
-    result = {
-        "page_count": page_count,
-        "pdf_author": pdf_author,
-        "pdf_title": pdf_title,
-        "pdf_keywords": pdf_keywords,
-        "word_count": word_count,
-        "sentence_count": sentence_count,
-        "unique_count": unique_count,
-        "unique_per": unique_per
-        "read_dif" : read_dif
-    }
-
-    return result
+def show_keyterms(nlp_text):
+    doc = nlp(text)
+    sgrank_list = extract.keyterms.sgrank(doc, ngrams=(2, 3, 4), topn=5)
+    terms = [item[0] for item in sgrank_list]
+    values = [item[1] for item in sgrank_list]
+    return terms, values
 
 
-def clean_pdf(pdf):
-    try:
-        with pymupdf.open(pdf) as doc:  # open document
-            # get all pages into string
-            text = " ".join([page.get_text() for page in doc])
-            text = text.replace('\n', ' ')
-            text = text.replace('et al', ' ')
-
-            # cleaning references, by removing everything after last occurence of split words
-            split_words = ["References", "Appendix", "Appendices", "Footnotes", "Glossary"]
-
-            for word in split_words:
-                if word in text:
-                    text_list = text.split(word)[:-1]
-                    # test_split = text.split(word)[-1]
-                    text = " ".join(text_list)
-
-    return text
-
-
-def normalize_lemma(doc):
-    normalized_text_list = []
-    for token in doc:
-        if not token.is_stop and not token.is_punct and not token.is_space:
-            normalized_text_list.append(token.lemma_.lower())
-            normalized_text = ' '.join(normalized_text_list)
-
-            return normalized_text
-
-
-def generate_wordcloud(text):
-
-    wordcloud = WordCloud().generate(text)
-    plt.imshow(wordcloud)
-    plt.show()
-
-
+def get_school_level(score):
+    levels = [
+        (90, 100, "This text is very easy to read. It corresponds to 5th grade level."),
+        (80, 90, "This text is easy to read. It corresponds to 6th grade level."),
+        (70, 80, "This text is fairly easy to read. It corresponds to 7th grade level."),
+        (60, 70, "This text's reading difficulty is average. It corresponds to 8th-9th grade level."),
+        (50, 60, "This text is fairly difficult to read. It corresponds to 10th-12th grade level."),
+        (30, 50, "This text is difficult to read. It corresponds to college level."),
+        (0, 30, "This text is very difficult to read. It corresponds to college graduate level."),
+    ]
+    for lower, upper, message in levels:
+        if lower <= score < upper:
+            return message
+    return "Invalid Score!"
 
 
 def analyze_pdf(pdf_file):
-    nlp = spacy.load("en_core_web_sm")
 
-    # open pdf with fitz
+    #Analyzes a PDF file to extract text, metadata,
+    #performs natural language processing using spaCy and textacy.
+
+    # open pdf
     with fitz.open(pdf_file) as pdf:
         full_text = ""
 
-        # update properties that can be extracted via fitz/pymupdf
+        # get metadata though pymu/fitz
         pdf_page_no = pdf.page_count
-        pdf_title = pdf.metdata["title"]
-        pdf_author = pdf.metadata["author"]
-        pdf_keywords = pdf.metadata["keywords"]
+        pdf_title = pdf.metadata.get("title", "Unknown Title")
+        pdf_author = pdf.metadata.get("author", "Unknown Author")
+        pdf_keywords = pdf.metadata.get("keywords", "No Keywords")
 
+        page_headers = []
+        page_ends = []
 
-
+        # extract text page by page, add to text
         for page in pdf:
-            full_text += page.getText()
+            page_text = page.get_text()
+            full_text += page_text
 
-        words = full_text.replace('\n', ' ').split()
-        orig_word_count = len(words)
+            rows = page_text.split("\n")
+            first_rows = rows[:4]
+            last_rows = rows[-4:]
+            page_headers.extend(first_rows)
+            page_ends.extend(last_rows)
 
-        # cleaning references, appendices by removing everything after last occurence of split words
-        split_words = ["References", "Appendix", "Appendices", "Footnotes", "Glossary"]
+        header_set = set(page_headers[4:])
+        bottom_set = set(page_ends[4:])
 
-        for header in split_words:
-            if header in words:
-                text_list = words.split(word)[:-1]
-                text = " ".join(text_list)
-                text = text.replace('et al.', ' ')
+        """
+        if len(header_set) < len(page_headers[4:]):
+            duplicates = [row for row in page_headers if row in header_set]
+            for row in duplicates:
+                full_text = re.sub(re.escape(row), " ", full_text)
 
-            else:
-                text = words.replace('et al.', ' ')
+        if len(bottom_set) < len(page_ends[4:]):
+            duplicates = [row for row in page_ends if row in bottom_set]
+            for row in duplicates:
+                full_text = re.sub(re.escape(row), " ", full_text)
+        """
 
-
-        # start natural languague processing of pdf_text
-        text_nlp = nlp(text)
-
-        sentence_count = text_stats.basics.n_sents(text_nlp)
-        read_dif = text_stats.readability.flesch_reading_ease(text_nlp)
-
-        # lemmatize text, lowercase all words
-        normalized_text_list = []
-        for token in text_nlp:
-            if not token.is_stop and not token.is_punct and not token.is_space:
-                normalized_text_list.append(token.lemma_.lower())
-                lemma = ' '.join(normalized_text_list)
+        # get word count, by compiling a list that is split by " "
+        orig_word_count = len(full_text.replace('\n', " ").split()) 
 
 
-        unique_count = text_stats.basics.n_unique_words(lemma)
+        # get rid of References or Appendix, by splitting text at last occurence of split words
+        split_words = ["References", "Appendix", "Appendices", "Glossary"]
+        for word in split_words:
+            if word in full_text:
+                full_text = " ".join(full_text.split(word)[:-1])
+                break
 
-        # store metdata results in dictionary, to be returned at end
+        # replace words commonly found in scientific papers
+
+        # List of common reference terms to look for
+        reference_terms = [
+            "Figure", "Fig.", "Table", "Tbl.", "Eq.", "Equation", "Exp.",
+            "Appendix", "Supplementary Figure", "Supplementary Table",
+            "Chart", "Graph", "Panel", "Diagram", "Plot", "et al."
+        ]
+
+        # Loop through the reference terms and replace them with a space
+        for term in reference_terms:
+            # Ensure case sensitivity and handle optional punctuation (colon or period)
+            pattern = r"\b" + re.escape(term) + r"\b[:.]?\s?\d*"
+            text = re.sub(pattern, " ", text)
+
+        # use the preprocessing methods from spacy,
+        # for memeory optimization they all overwrite "full_text"
+        full_text = remove.brackets(full_text)
+        full_text = normalize.hyphenated_words(full_text)
+        full_text = normalize.unicode(full_text)
+        full_text = normalize.whitespace(full_text)
+        full_text = normalize.quotation_marks(full_text)
+        full_text = normalize.bullet_points(full_text)
+        full_text = replace.urls(full_text, repl=" ")
+        full_text = replace.emails(full_text, repl=" ")
+        full_text = replace.emojis(full_text, repl=" ")
+        full_text = replace.hashtags(full_text, repl=" ")
+        full_text = replace.numbers(full_text, repl=" ")
+        full_text = replace.phone_numbers(full_text, repl=" ")
+        full_text = replace.user_handles(full_text, repl=" ")
+
+        # apply languague model to the text
+        # here each word is analized and gets meaning assigned
+        full_text = nlp(full_text)
+
+
+        sgrank_list = extract.keyterms.sgrank(full_text, ngrams=(2, 3, 4), topn=5)
+        terms = [item[0] for item in sgrank_list]
+        values = [item[1] for item in sgrank_list]
+
+
+        # get additional metadata from text
+        sentence_count = text_stats.basics.n_sents(full_text)
+        read_dif = text_stats.readability.flesch_reading_ease(full_text)
+        unique_count = text_stats.basics.n_unique_words(full_text)
+
+        # assign meaning to reading index
+        reading_lvl = get_school_level(read_dif)
+
+        # processesed text is brought into lemma (Grundform), is lowered
+        # fill words and punctuation is removed for word
+        normalized_text_list = [
+            token.lemma_.lower() for token in  full_text
+            if not token.is_stop and not token.is_punct and not token.is_space
+        ]
+        lemmatized_text = " ".join(normalized_text_list)
+
+        unique_perc = f"{round(unique_count / orig_word_count * 100, 2)}%"
+
         Meta = {
             "title": pdf_title,
             "author": pdf_author,
@@ -131,10 +155,8 @@ def analyze_pdf(pdf_file):
             "page_no": pdf_page_no,
             "word_count": orig_word_count,
             "sentence_count": sentence_count,
-            "unique_count": unique_count,
-            "read_dif": read_dif
-
-
+            "unique_perc": unique_perc,
+            "read_dif": reading_lvl,
         }
 
-    return lemma, fitz_meta
+    return lemmatized_text, Meta, terms, values

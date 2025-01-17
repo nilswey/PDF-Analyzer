@@ -1,5 +1,7 @@
 from functools import partial
 import re
+from multiprocessing.reduction import duplicate
+
 import spacy
 import fitz  # PyMuPDF
 import textacy
@@ -8,14 +10,28 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from textacy import text_stats, extract, preprocessing
 
-#nlp = spacy.load("en_core_web_sm")
+nlp = spacy.load("en_core_web_sm")
 
 def generate_wordcloud(text):
     wordcloud = WordCloud(background_color="White", colormap='RdYlGn', max_words=50).generate(text)
     plt.imshow(wordcloud)
     plt.axis("off")
     plt.show()
+    
+def show_keyterms(text):
 
+    doc = textacy.make_spacy_doc(text, lang=nlp)
+    # extract keyterms from text that are found in functionally connected words with length of 2,3 or 4, return only top 5 scoring
+    sgrank_list = extract.keyterms.sgrank(doc, ngrams=(2, 3, 4), topn=5)
+
+
+    # extract the items and values from sets in list
+    terms = [item[0] for item in sgrank_list]
+    values = [item[1] for item in sgrank_list]
+
+    return terms, values
+
+"""
 def get_school_level(score):
     #translate flesch reading score to school levels.
     # based on https://pages.stern.nyu.edu/~wstarbuc/Writing/Flesch.htm
@@ -43,7 +59,48 @@ def get_school_level(score):
 
     else:
         return "Invalid Score!"
+"""
 
+def get_school_level(score):
+    # Translate Flesch reading score to school levels
+    levels = [
+        (90, 100, "This text is very easy to read. It corresponds to 5th grade level."),
+        (80, 90, "This text is easy to read. It corresponds to 6th grade level."),
+        (70, 80, "This text is fairly easy to read. It corresponds to 7th grade level."),
+        (60, 70, "This text's reading difficulty is average. It corresponds to 8th-9th grade level."),
+        (50, 60, "This text is fairly difficult to read. It corresponds to 10th-12th grade level."),
+        (30, 50, "This text is difficult to read. It corresponds to college level."),
+        (0, 30, "This text is very difficult to read. It corresponds to college graduate level."),
+    ]
+    for lower, upper, message in levels:
+        if lower <= score < upper:
+            return message
+        else:
+            return "Invalid Score!"
+
+def clean_by_list(text, ip_list, row_number):
+
+    if len(ip_list) == 0:
+        print("Something went wrong with the Header Cleaning!")
+        return Text
+
+    else:
+        if len(list_red[row_number:]) > len(set_red:row_number):
+            seen = set()
+            dupes = []
+
+            # Find duplicate rows
+            for row in list_red:
+                if row in seen:
+                    dupes.append(row)
+                else:
+                    seen.add(row)
+
+            # Remove duplicates from the text
+            for duplicate in dupes:
+                text = re.sub(re.escape(duplicate), " ", text)
+
+        return text
 
 
 def analyze_pdf(pdf_file):
@@ -56,8 +113,7 @@ def analyze_pdf(pdf_file):
     Returns:
         tuple: (lemmatized_text, metadata_dict)
     """
-    # Load the spaCy NLP model
-    nlp = spacy.load("en_core_web_sm")
+
 
     # Open the PDF file with PyMuPDF
     with fitz.open(pdf_file) as pdf:
@@ -117,7 +173,7 @@ def analyze_pdf(pdf_file):
                 break  # Stop after the first match
 
         # Replace "et al." found in scientific papers
-        full_text = full_text.replace("et al.", "")
+        full_text = full_text.replace("et al.", " ")
 
         # Define Pipeline of things that should be removed or normalized
         preproc = preprocessing.make_pipeline(
@@ -127,19 +183,16 @@ def analyze_pdf(pdf_file):
             preprocessing.normalize.whitespace,
             preprocessing.normalize.quotation_marks,
             preprocessing.normalize.bullet_points,
-            preprocessing.remove.brackets,
-            partial(preprocessing.replace.urls, repl="placeholder_"),
-            partial(preprocessing.replace.emails, repl="placeholder_"),
-            partial(preprocessing.replace.emojis, repl="placeholder_"),
-            partial(preprocessing.replace.hashtags, repl="placeholder_"),
-            partial(preprocessing.replace.numbers, repl="placeholder_"),
-            partial(preprocessing.replace.phone_numbers, repl="placeholder_"),
-            partial(preprocessing.replace.user_handles, repl="placeholder_")
+            partial(preprocessing.replace.urls, repl=" "),
+            partial(preprocessing.replace.emails, repl=" "),
+            partial(preprocessing.replace.emojis, repl=" "),
+            partial(preprocessing.replace.hashtags, repl=" "),
+            partial(preprocessing.replace.numbers, repl=" "),
+            partial(preprocessing.replace.phone_numbers, repl=" "),
+            partial(preprocessing.replace.user_handles, repl=" ")
         )
 
         prep_text = preproc(full_text)
-        # clean all the definded placeholder
-        prep_text= prep_text.replace("placeholder_", "")
 
 
         # Process the text with spaCy
@@ -179,20 +232,9 @@ def analyze_pdf(pdf_file):
     return lemmatized_text, Meta
 
 
-def show_keyterms(text):
-
-    doc = textacy.make_spacy_doc(text, lang="en_core_web_sm")
-    # extract keyterms from text that are found in functionally connected words with length of 2,3 or 4, return only top 5 scoring
-    sgrank_list = extract.keyterms.sgrank(doc, ngrams=(2, 3, 4), topn=5)
 
 
-    # extract the items and values from sets in list
-    terms = [item[0] for item in sgrank_list]
-    values = [item[1] for item in sgrank_list]
-
-    return terms, values
-
-""""""
+"""
 #pdf = 'sample.pdf'
 
 #lemmatized_text, Meta = analyze_pdf(pdf)
@@ -202,3 +244,4 @@ def show_keyterms(text):
 
 #print(lemmatized_text)
 #print(Meta)
+"""
