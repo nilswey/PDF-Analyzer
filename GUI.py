@@ -4,7 +4,7 @@ from PyQt6.QtGui import QFont
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from pdf_analyzer import analyze_pdf, show_keyterms
+from pdf_analyzer import analyze_pdf
 from wordcloud import WordCloud
 
 class MainWindow(QWidget):

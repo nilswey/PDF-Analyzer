@@ -229,7 +229,7 @@ def analyze_pdf(pdf_file):
             "read_dif": reading_lvl
         }
 
-    return lemmatized_text, Meta
+    return lemmatized_text, Meta,
 
 
 
