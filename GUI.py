@@ -1,8 +1,6 @@
-from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog
 from PyQt6.QtGui import QFont
 import matplotlib.pyplot as plt
-from matplotlib import rcParams
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from pdf_analyzer import analyze_pdf
 from wordcloud import WordCloud
@@ -25,9 +23,12 @@ class MainWindow(QWidget):
         self.readability = QLabel("")
 
         # Create objects for the right side
+
+        # Wordcloud of PDF Terms
         self.wordcloud = plt.figure()
         self.wordcloud_canvas = FigureCanvas(self.wordcloud)
 
+        # Barchart of Keyterms
         self.keyterms = plt.figure()
         self.keyterms_canvas = FigureCanvas(self.keyterms)
 
@@ -41,12 +42,17 @@ class MainWindow(QWidget):
 
     def init_ui(self):
         # Set up User Interface
-        # Create all widgets
-        self.title = QLabel("PDF Analyzer")  # Top center title
+
+        # inittialize Master layout where everything goes into
+        self.master_layout = QVBoxLayout()
+
+
+        # Create all widgets in top bar
+        self.title = QLabel("PDF Analyzer")
         self.select_text = QLabel("Select PDF File to Analyze:")
         self.select_button = QPushButton("Select File")
         self.clear_button = QPushButton("Clear")
-        self.file_path_label = QLabel("No file selected")  # Label to show the selected file path
+        self.file_path_label = QLabel("No file selected")
 
         #Style Top Row:
         font_title = QFont("Helvetica Neue", 18)
@@ -58,10 +64,8 @@ class MainWindow(QWidget):
         self.select_button.setFont(font_select)
         self.clear_button.setFont(font_select)
 
-        # Master layout where everything goes into
-        self.master_layout = QVBoxLayout()
 
-        # Create top centered objects in horizontal layout
+        # Create title box containing the just created widgets
         self.title_box = QHBoxLayout()
 
         # Add widgets to title box
@@ -90,8 +94,6 @@ class MainWindow(QWidget):
         # add and apply font style
         font_left_label = QFont("Helvetica Neue", 10)
         font_left_label.setBold(True)
-
-
 
         property_labels = [
             pdf_title_label,
@@ -149,20 +151,24 @@ class MainWindow(QWidget):
 
 
         # Add layouts to master layout
-        self.bot_row.addLayout(self.left_column, 40)
-        self.bot_row.addLayout(self.right_column, 60)
+        self.bot_row.addLayout(self.left_column, 50)
+        self.bot_row.addLayout(self.right_column, 50)
         self.master_layout.addLayout(self.title_box, 5)
         self.master_layout.addLayout(self.bot_row, 95)
 
         # Set the main layout for the window
         self.setLayout(self.master_layout)
 
-        # Connect the button to the file selection method
+        # Connect the button to the file selection method and clear method
         self.select_button.clicked.connect(self.select_file)
         self.clear_button.clicked.connect(self.clear_widgets)
 
+
+
     def select_file(self):
-        """Handles the file selection process."""
+
+        # method for File Selection button
+
         # Open a file dialog to select a PDF file
         file_path, _ = QFileDialog.getOpenFileName(self, "Select PDF File", "", "PDF Files (*.pdf)")
 
@@ -177,9 +183,12 @@ class MainWindow(QWidget):
         else:
             self.file_path_label.setText("No file selected")
 
+
+
+
     def clear_widgets(self):
 
-
+        # clear all information from the page
 
         property_widgets = [
             self.pdf_title,
@@ -197,12 +206,16 @@ class MainWindow(QWidget):
 
         for widget in property_widgets:
             widget.clear()
+
+        # These need to be reset to orig. state
         self.file_path_label.setText("No file selected")
         self.keyterms_canvas.draw()
         self.wordcloud_canvas.draw()
 
     def process_file(self, file_path):
-        """Processes the selected PDF file."""
+
+        # Calls file processing from other file, sets the results to GUI
+
         try:
             # Analyze the PDF
             lemma_text, meta, terms, values = analyze_pdf(file_path)
@@ -217,36 +230,37 @@ class MainWindow(QWidget):
             self.word_count_unique.setText(str(meta["unique_perc"]))
             self.readability.setText(str(meta["read_dif"]))
 
-            # Generate the word cloud
 
+            # Generate the word cloud
             wordcloud = WordCloud(background_color="White", colormap='RdYlGn', max_words=50).generate(lemma_text)
             self.wordcloud.clear()
+
+            # stretch plot to canvas size
             ax = self.wordcloud.add_subplot(111)
             ax.imshow(wordcloud, interpolation="bilinear")
             ax.axis("off")
             self.wordcloud_canvas.draw()
 
-            # generate keytermns
-            # terms, values = show_keyterms(lemma_text)
-            ax = self.keyterms.add_subplot(111)  # Add a subplot to the keyterms figure
+            # Generate Keyterms barchart
+            ax = self.keyterms.add_subplot(111)
 
             # Create the bar chart
             barplot = ax.barh(terms, values, color='skyblue')
 
             # Annotate bars with keywords
             for bar, term in zip(barplot, terms):
+                # set text to middle of barchart
                 ax.text(
-                    bar.get_width() / 2,  # x-coordinate (center of the bar)
-                    bar.get_y() + bar.get_height() / 2,  # y-coordinate (center of the bar)
-                    term,  # Text to display
+                    bar.get_width() / 2,
+                    bar.get_y() + bar.get_height() / 2,
+                    term,
                     ha='center', va='center', color='black', fontsize=10, wrap=True
                 )
 
             # Add labels and title
-            ax.set_xlabel('Ranked Importance')
-            ax.axis("off")  # Hide y-ticks
+            ax.axis("off")
             ax.set_title('Key Terms')
-            ax.invert_yaxis()  # Invert y-axis to display highest score at the top
+            ax.invert_yaxis()  # Invert y most important to top
 
             # Redraw the canvas
             self.keyterms_canvas.draw()

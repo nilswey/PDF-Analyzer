@@ -1,4 +1,3 @@
-from functools import partial
 import re
 import spacy
 import fitz  # PyMuPDF
@@ -9,6 +8,10 @@ import time
 
 
 def get_school_level(score):
+
+    # translate flesch reading score to school levels.
+    # based on https://pages.stern.nyu.edu/~wstarbuc/Writing/Flesch.htm
+
     levels = [
         (90, 100, "This text is very easy to read. It corresponds to 5th grade level."),
         (80, 90, "This text is easy to read. It corresponds to 6th grade level."),
@@ -26,15 +29,14 @@ def get_school_level(score):
 
 def analyze_pdf(pdf_file):
 
-    start_time = time.time()
     #Analyzes a PDF file to extract text, metadata,
     #performs natural language processing using spaCy and textacy.
 
+    # Start timer
+    start_time = time.time()
     nlp = spacy.load("en_core_web_sm")
-    print("loaded NLP")
+
     # open pdf
-
-
     with fitz.open(pdf_file) as pdf:
         full_text = ""
 
@@ -44,6 +46,7 @@ def analyze_pdf(pdf_file):
         pdf_author = pdf.metadata.get("author", "Unknown Author")
         pdf_keywords = pdf.metadata.get("keywords", "No Keywords")
 
+        # set up list to contain headers and footers
         page_headers = []
         page_ends = []
 
@@ -52,7 +55,11 @@ def analyze_pdf(pdf_file):
             page_text = page.get_text()
             full_text += page_text
 
+            # Headers and Fotters removal
+            # text is split by \n leaving rows of text
+            # first and last rows are searched for patterns
             rows = page_text.split("\n")
+
             first_rows = rows[:4]
             last_rows = rows[-4:]
             page_headers.extend(first_rows)
@@ -60,13 +67,14 @@ def analyze_pdf(pdf_file):
 
         print("Text sucessfully extracted")
 
+        # Find duplicate rows in extracted headers/footers
         seen_t = set()
         dupes_t = []
 
         seen_b = set()
         dupes_b = []
 
-        # Find duplicate rows
+
         for row in page_headers:
             if row in seen_t:
                 dupes_t.append(row)
@@ -79,6 +87,7 @@ def analyze_pdf(pdf_file):
             else:
                 seen_b.add(row)
 
+        # union the duplciates and simplify removal through set
         dupes = set(dupes_t).union(set(dupes_b))
 
         if len(dupes) < 0:
@@ -93,11 +102,9 @@ def analyze_pdf(pdf_file):
             if word in full_text:
                 full_text = " ".join(full_text.split(word)[:-1])
                 print(f"Removed {word} sucessfully")
-                break
+                break #as sone as one is found stop
 
         # replace words commonly found in scientific papers
-
-        # List of common reference terms to look for
         reference_terms = [
             "Figure", "Fig.", "Table", "Tbl.", "Eq.", "Equation", "Exp.",
             "Appendix", "Supplementary Figure", "Supplementary Table",
@@ -106,12 +113,11 @@ def analyze_pdf(pdf_file):
 
         # Loop through the reference terms and replace them with a space
         for term in reference_terms:
-            # Ensure case sensitivity and handle optional punctuation (colon or period)
+            # Ensure case sensitivity and handle potential punctuation afterwards
             pattern = r"\b" + re.escape(term) + r"\b[:.]?\s?\d*"
             full_text = re.sub(pattern, " ", full_text)
 
         # use the preprocessing methods from spacy,
-        # for memeory optimization they all overwrite "full_text"
         full_text = remove.brackets(full_text)
         full_text = normalize.hyphenated_words(full_text)
         full_text = normalize.unicode(full_text)
@@ -131,24 +137,31 @@ def analyze_pdf(pdf_file):
         orig_word_count = len(full_text.replace('\n', " ").split())
 
         # apply languague model to the text
-        # here each word is analized and gets meaning assigned
+        # here each word is analyzed and gets meaning assigned
         full_text = nlp(full_text)
         print("Processing Text via Language Model")
 
+        # extracts leyterms in text
+        # simple explanation: https://www.markovml.com/blog/textrank-algorithm
         try:
-            sgrank_list = extract.keyterms.textrank(full_text, topn=5, window_size=5)
-
+            sgrank_list = extract.keyterms.textrank(
+                full_text,
+                topn=5,
+                window_size=4,
+                normalize="lemma",
+                include_pos = "NOUN"
+            )
             print("Extracted key terms")
+
             # return important terms and weights ins seperate lists
             terms = [item[0] for item in sgrank_list]
             values = [item[1] for item in sgrank_list]
 
-            end_time = time.time()
-            elapsed_time = end_time - start_time  # Calculate the elapsed time
-            print(f"Keyterm extraction took {elapsed_time:.2f} seconds to execute.")
+
         except Exception as e:
             print(f"Error in keyword extraction: {e}")
             return [], []
+
 
         # get additional metadata from text
         sentence_count = text_stats.basics.n_sents(full_text)
@@ -165,10 +178,15 @@ def analyze_pdf(pdf_file):
             token.lemma_.lower() for token in  full_text
             if not token.is_stop and not token.is_punct and not token.is_space
         ]
+
+        # text goes back from spacy Doc Format to Text
         lemmatized_text = " ".join(normalized_text_list)
         print("Normalized Text sucessfully")
-        unique_perc = f"{round(unique_count / orig_word_count * 100, 2)}%"
 
+        # calc percentage of unique words
+        unique_perc = f"{round(unique_count / orig_word_count * 100, 2)} %"
+
+        # compile pdf-metadata into list
         Meta = {
             "title": pdf_title,
             "author": pdf_author,
@@ -187,19 +205,4 @@ def analyze_pdf(pdf_file):
 
     return lemmatized_text, Meta , terms, values
 
-"""
-pdf = 'sample3.pdf'
-
-lemmatized_text, Meta = analyze_pdf(pdf)
-
-#generate_wordcloud(lemmatized_text)
-terms, values = show_keyterms(pdf)
-print(terms)
-print(values)
-
-#print(lemmatized_text)
-#print(Meta)
-
-
-"""
 
