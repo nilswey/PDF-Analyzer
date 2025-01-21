@@ -232,35 +232,36 @@ class MainWindow(QWidget):
 
 
             # Generate the word cloud
-            wordcloud = WordCloud(background_color="White", colormap='RdYlGn', max_words=50).generate(lemma_text)
+            wordcloud = WordCloud(background_color="White", colormap='RdYlGn', max_words=25).generate(lemma_text)
             self.wordcloud.clear()
 
-            # stretch plot to canvas size
-            ax = self.wordcloud.add_subplot(111)
-            ax.imshow(wordcloud, interpolation="bilinear")
-            ax.axis("off")
+            # Stretch the word cloud plot to fit the canvas size
+            ax_wordcloud = self.wordcloud.add_subplot(111)
+            ax_wordcloud.imshow(wordcloud, interpolation="bilinear")
+            ax_wordcloud.set_title('Most Frequent Words', fontsize=12)
+            ax_wordcloud.axis("off")
             self.wordcloud_canvas.draw()
 
-            # Generate Keyterms barchart
-            ax = self.keyterms.add_subplot(111)
+            # Generate Keyterms bar chart
+            self.keyterms.clear()  # Clear the figure before adding new content
+            ax_keyterms = self.keyterms.add_subplot(111)
 
             # Create the bar chart
-            barplot = ax.barh(terms, values, color='skyblue')
+            barplot = ax_keyterms.barh(terms, values, color='skyblue')
 
             # Annotate bars with keywords
             for bar, term in zip(barplot, terms):
-                # set text to middle of barchart
-                ax.text(
-                    bar.get_width() / 2,
+                ax_keyterms.text(
+                    bar.get_width() / 2,  # Place text in the middle of the bar
                     bar.get_y() + bar.get_height() / 2,
                     term,
-                    ha='center', va='center', color='black', fontsize=10, wrap=True
+                    ha='center', va='center', color='black', fontsize=10
                 )
 
-            # Add labels and title
-            ax.axis("off")
-            ax.set_title('Key Terms')
-            ax.invert_yaxis()  # Invert y most important to top
+            # Add title and customize axes
+            ax_keyterms.set_title('Key Terms', fontsize=12)
+            ax_keyterms.axis("off")  # Remove axes for cleaner visualization
+            ax_keyterms.invert_yaxis()  # Invert y-axis so the most important terms are on top
 
             # Redraw the canvas
             self.keyterms_canvas.draw()

@@ -108,7 +108,7 @@ def analyze_pdf(pdf_file):
         reference_terms = [
             "Figure", "Fig.", "Table", "Tbl.", "Eq.", "Equation", "Exp.",
             "Appendix", "Supplementary Figure", "Supplementary Table",
-            "Chart", "Graph", "Panel", "Diagram", "Plot", "et al."
+            "Chart", "Graph", "Panel", "Diagram", "Plot", "et al.", "et al"
         ]
 
         # Loop through the reference terms and replace them with a space
