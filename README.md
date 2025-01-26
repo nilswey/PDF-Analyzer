@@ -31,7 +31,7 @@ The tool is also not optimized for scanned documents that have been converted to
 First, clone the repository to your local machine:
 
 ```bash
-git clone https://github.com/yourusername/yourproject.git
+git clone https://github.com/nilswey/PDF-Analyzer.git
 ```
 ```bash
 cd pdf-analyzer
