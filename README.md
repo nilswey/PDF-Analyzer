@@ -34,7 +34,7 @@ First, clone the repository to your local machine:
 git clone https://github.com/nilswey/PDF-Analyzer.git
 ```
 ```bash
-cd pdf-analyzer
+cd PDF-Analyzer
 ```
 
 
@@ -42,23 +42,24 @@ cd pdf-analyzer
 
 #### Windows Users:
 ```bash
-python -m venv pdf-analyzer
+python -m venv PDF-Analyzer
 ```
 #### Linux/MacOS:
 ```bash
-python3 -m venv pdf-analyzer
+python3 -m venv PDF-Analyzer
 ```
 
 ### 3 Activate the virtual environment:
 #### Windows Users:
 
 ```bash
-venv\Scripts\activate.bat
+PDF-Analzyer\Scripts\activate
+
 ```
 #### Linux/MacOS:
 
 ```bash
-source venv/bin/activate
+source PDF-Analzyer\Scripts\activate
 ```
 
 ### 4: Install Required Python Packages
