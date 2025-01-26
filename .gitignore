@@ -1,0 +1,6 @@
+
+# igonre the following
+
+__pycache__/
+.idea
+.ipynb_checkpoints
