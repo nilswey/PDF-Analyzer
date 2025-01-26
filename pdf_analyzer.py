@@ -102,7 +102,7 @@ def analyze_pdf(pdf_file):
             if word in full_text:
                 full_text = " ".join(full_text.split(word)[:-1])
                 print(f"Removed {word} sucessfully")
-                break #as sone as one is found stop
+                break #break as soon as one is found stop
 
         # replace words commonly found in scientific papers
         reference_terms = [
@@ -117,7 +117,7 @@ def analyze_pdf(pdf_file):
             pattern = r"\b" + re.escape(term) + r"\b[:.]?\s?\d*"
             full_text = re.sub(pattern, " ", full_text)
 
-        # use the preprocessing methods from spacy,
+        # use the preprocessing methods from spacy
         full_text = remove.brackets(full_text)
         full_text = normalize.hyphenated_words(full_text)
         full_text = normalize.unicode(full_text)

@@ -34,13 +34,13 @@ class MainWindow(QWidget):
 
         # Configure the main window
         self.setWindowTitle("PDF Analyzer")
-        #self.resize(1400, 700)
         self.setFixedSize(1400, 700)
 
         # Initialize the user interface
         self.init_ui()
 
     def init_ui(self):
+
         # Set up User Interface
 
         # inittialize Master layout where everything goes into
@@ -130,18 +130,25 @@ class MainWindow(QWidget):
         # Add labels and widgets to the left column
         self.left_column.addWidget(pdf_title_label)
         self.left_column.addWidget(self.pdf_title)
+
         self.left_column.addWidget(pdf_author_label)
         self.left_column.addWidget(self.pdf_author)
+
         self.left_column.addWidget(pdf_keywords_label)
         self.left_column.addWidget(self.pdf_keywords)
+
         self.left_column.addWidget(pdf_page_no_label)
         self.left_column.addWidget(self.pdf_page_no)
+
         self.left_column.addWidget(sent_count_label)
         self.left_column.addWidget(self.sent_count)
+
         self.left_column.addWidget(word_count_label)
         self.left_column.addWidget(self.word_count)
+
         self.left_column.addWidget(word_count_unique_label)
         self.left_column.addWidget(self.word_count_unique)
+
         self.left_column.addWidget(readability_label)
         self.left_column.addWidget(self.readability)
 
@@ -150,7 +157,7 @@ class MainWindow(QWidget):
         self.right_column.addWidget(self.keyterms_canvas)
 
 
-        # Add layouts to master layout
+        # Add layouts to master layout, define default size
         self.bot_row.addLayout(self.left_column, 50)
         self.bot_row.addLayout(self.right_column, 50)
         self.master_layout.addLayout(self.title_box, 5)
@@ -249,19 +256,19 @@ class MainWindow(QWidget):
             # Create the bar chart
             barplot = ax_keyterms.barh(terms, values, color='skyblue')
 
-            # Annotate bars with keywords
+            # set bar with keyword text
             for bar, term in zip(barplot, terms):
                 ax_keyterms.text(
-                    bar.get_width() / 2,  # Place text in the middle of the bar
+                    bar.get_width() / 2,
                     bar.get_y() + bar.get_height() / 2,
                     term,
                     ha='center', va='center', color='black', fontsize=10
                 )
 
-            # Add title and customize axes
+            # Add title, setaxis off, invert y
             ax_keyterms.set_title('Key Terms', fontsize=12)
-            ax_keyterms.axis("off")  # Remove axes for cleaner visualization
-            ax_keyterms.invert_yaxis()  # Invert y-axis so the most important terms are on top
+            ax_keyterms.axis("off")
+            ax_keyterms.invert_yaxis()
 
             # Redraw the canvas
             self.keyterms_canvas.draw()
