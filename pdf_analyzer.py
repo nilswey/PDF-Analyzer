@@ -60,8 +60,8 @@ def analyze_pdf(pdf_file):
             # first and last rows are searched for patterns
             rows = page_text.split("\n")
 
-            first_rows = rows[:4]
-            last_rows = rows[-4:]
+            first_rows = rows[:6]
+            last_rows = rows[-6:]
             page_headers.extend(first_rows)
             page_ends.extend(last_rows)
 
@@ -115,7 +115,7 @@ def analyze_pdf(pdf_file):
         for term in reference_terms:
             # Ensure case sensitivity and handle potential punctuation afterwards
             pattern = r"\b" + re.escape(term) + r"\b[:.]?\s?\d*"
-            full_text = re.sub(pattern, " ", full_text)
+            full_text = re.sub(pattern, "", full_text)
 
         # use the preprocessing methods from spacy
         full_text = remove.brackets(full_text)

@@ -34,7 +34,7 @@ class MainWindow(QWidget):
 
         # Configure the main window
         self.setWindowTitle("PDF Analyzer")
-        self.setFixedSize(1400, 700)
+        self.resize(1400, 700)
 
         # Initialize the user interface
         self.init_ui()
